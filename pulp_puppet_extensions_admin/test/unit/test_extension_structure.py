@@ -1,6 +1,7 @@
 from pulp_puppet.devel import base_cli
 from pulp_puppet.extensions.admin import structure
 
+
 class StructureTests(base_cli.ExtensionTests):
 
     def test_ensure_puppet_root(self):
@@ -56,18 +57,6 @@ class SectionRetrievalTests(base_cli.ExtensionTests):
     def test_consumer_section(self):
         section = structure.consumer_section(self.cli)
         self.assertEqual(section.name, structure.SECTION_CONSUMER)
-
-    def test_consumer_install_section(self):
-        section = structure.consumer_install_section(self.cli)
-        self.assertEqual(section.name, structure.SECTION_INSTALL)
-
-    def test_consumer_update_section(self):
-        section = structure.consumer_update_section(self.cli)
-        self.assertEqual(section.name, structure.SECTION_UPDATE)
-
-    def test_consumer_uninstall_section(self):
-        section = structure.consumer_uninstall_section(self.cli)
-        self.assertEqual(section.name, structure.SECTION_UNINSTALL)
 
     def test_repo_section(self):
         section = structure.repo_section(self.cli)

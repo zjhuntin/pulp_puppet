@@ -9,17 +9,10 @@ from gettext import gettext as _
 
 # -- constants ----------------------------------------------------------------
 
-# Root section all puppet functionality will be located under
-from pulp_puppet.extensions.admin.consumer import content
-
 SECTION_ROOT = 'puppet'
 
 SECTION_CONSUMER = 'consumer'
 SECTION_REPO = 'repo'
-
-SECTION_INSTALL = 'install'
-SECTION_UPDATE = 'update'
-SECTION_UNINSTALL = 'uninstall'
 
 SECTION_UPLOADS = 'uploads'
 
@@ -32,10 +25,6 @@ DESC_ROOT = _('manage Puppet-related content and features')
 DESC_CONSUMER = _('consumer commands')
 DESC_REPO = _('repository lifecycle commands')
 
-DESC_INSTALL = _('run a module install')
-DESC_UPDATE = _('run a module update')
-DESC_UNINSTALL = _('run a module uninstall')
-
 DESC_UPLOADS = _('upload modules into a repository')
 
 DESC_SYNC = _('run, schedule, or view the status of sync tasks')
@@ -44,6 +33,7 @@ DESC_PUBLISH = _('run, schedule, or view the status of publish tasks')
 DESC_PUBLISH_SCHEDULES = _('manage repository publish schedules')
 
 # -- creation -----------------------------------------------------------------
+
 
 def ensure_puppet_root(cli):
     """
@@ -71,10 +61,6 @@ def ensure_consumer_structure(cli):
         return consumer_section
 
     consumer_section = root_section.create_subsection(SECTION_CONSUMER, DESC_CONSUMER)
-
-    consumer_section.create_subsection(SECTION_INSTALL, DESC_INSTALL)
-    consumer_section.create_subsection(SECTION_UPDATE, DESC_UPDATE)
-    consumer_section.create_subsection(SECTION_UNINSTALL, DESC_UNINSTALL)
 
     return consumer_section
 
@@ -120,20 +106,9 @@ def ensure_repo_structure(cli):
 
 # -- section retrieval --------------------------------------------------------
 
+
 def consumer_section(cli):
     return _find_section(cli, SECTION_ROOT, SECTION_CONSUMER)
-
-
-def consumer_install_section(cli):
-    return _find_section(cli, SECTION_ROOT, SECTION_CONSUMER, SECTION_INSTALL)
-
-
-def consumer_update_section(cli):
-    return _find_section(cli, SECTION_ROOT, SECTION_CONSUMER, SECTION_UPDATE)
-
-
-def consumer_uninstall_section(cli):
-    return _find_section(cli, SECTION_ROOT, SECTION_CONSUMER, SECTION_UNINSTALL)
 
 
 def repo_section(cli):
@@ -157,9 +132,11 @@ def repo_publish_section(cli):
 
 
 def repo_publish_schedules_section(cli):
-    return _find_section(cli, SECTION_ROOT, SECTION_REPO, SECTION_PUBLISH, SECTION_PUBLISH_SCHEDULES)
+    return _find_section(cli, SECTION_ROOT, SECTION_REPO, SECTION_PUBLISH,
+                         SECTION_PUBLISH_SCHEDULES)
 
 # -- private ------------------------------------------------------------------
+
 
 def _find_section(cli, *path):
     """
@@ -169,7 +146,7 @@ def _find_section(cli, *path):
     :type  cli: pulp.client.extensions.core.PulpCli
     :param path: path through the nest of sections to the desired section
     :type  path: list of str
-    
+
     :return: section instance that matches the path
     :rtype:  pulp.client.extensions.core.PulpCliSection
     """

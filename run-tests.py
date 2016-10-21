@@ -15,7 +15,6 @@ EL5_SAFE_TESTS = [
     'pulp_puppet_common/test/unit/',
     'pulp_puppet_extensions_admin/test/unit/',
     'pulp_puppet_extensions_consumer/test/unit/',
-    'pulp_puppet_handlers/test/unit/',
 ]
 
 NON_EL5_TESTS = [
