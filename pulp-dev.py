@@ -35,9 +35,6 @@ LINKS = (
     ('pulp_puppet_plugins/usr/share/pulp/wsgi/puppet_forge.wsgi', '/usr/share/pulp/wsgi/puppet_forge.wsgi'),
     # Puppet Support Admin Extensions
     ('pulp_puppet_extensions_admin/etc/pulp/admin/conf.d/puppet.conf', '/etc/pulp/admin/conf.d/puppet.conf'),
-    # handlers
-    ('pulp_puppet_handlers/etc/pulp/agent/conf.d/puppet_bind.conf', '/etc/pulp/agent/conf.d/puppet_bind.conf'),
-    ('pulp_puppet_handlers/etc/pulp/agent/conf.d/puppet_module.conf', '/etc/pulp/agent/conf.d/puppet_module.conf'),
 )
 
 def parse_cmdline():
