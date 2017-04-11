@@ -64,7 +64,7 @@ MODULE_FILENAME = '%s-%s-%s.tar.gz'
 # Substitutions: filename
 STORAGE_MODULE_RELATIVE_PATH = '%s'
 
-#Default hashlib encoder to user
+# Default hashlib encoder to user
 DEFAULT_HASHLIB = 'sha256'
 
 # -- progress states ----------------------------------------------------------
@@ -118,6 +118,8 @@ CONFIG_ABSOLUTE_PATH = 'absolute_path'
 DEFAULT_ABSOLUTE_PATH = '/pulp/puppet/'
 
 CONFIG_INSTALL_PATH = 'install_path'
+
+CONFIG_SUBDIR = 'subdir'
 
 # -- forge API ---------------------------------------------------------------
 

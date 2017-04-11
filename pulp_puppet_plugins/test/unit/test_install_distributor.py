@@ -116,7 +116,8 @@ class TestValidateConfig(unittest.TestCase):
 class TestPublishRepo(unittest.TestCase):
     def setUp(self):
         self.distributor = installdistributor.PuppetModuleInstallDistributor()
-        self.puppet_dir = '/opt/my/modules/'
+        self.puppet_dir = '/opt/my/'
+        self.puppet_subdir = 'modules'
         self.repo = Repository('repo1', '', repo_obj=mock.MagicMock())
         self.conduit = RepoPublishConduit('repo1', self.distributor.metadata()['id'])
         self.uk1 = {'author': 'puppetlabs', 'name': 'stdlib', 'version': '1.2.0'}
@@ -125,7 +126,8 @@ class TestPublishRepo(unittest.TestCase):
             Module(_storage_path='/a/b/x', **self.uk1),
             Module(_storage_path='/a/b/y', **self.uk2)
         ]
-        self.conduit.get_units = mock.MagicMock(return_value=self.units, spec_set=self.conduit.get_units)
+        self.conduit.get_units = mock.MagicMock(return_value=self.units,
+                                                spec_set=self.conduit.get_units)
 
     @mock.patch('pulp.server.controllers.repository.find_repo_content_units', spec_set=True)
     @mock.patch.object(installdistributor, 'mkdir', return_value=None)
@@ -175,6 +177,60 @@ class TestPublishRepo(unittest.TestCase):
         mock_mkdir.assert_called_once_with(self.puppet_dir)
         mock_clear.assert_called_once_with(self.puppet_dir)
         mock_check_paths.assert_called_once_with(self.units, self.puppet_dir)
+
+        self.assertEqual(mock_move.call_count, 1)
+
+    @mock.patch('pulp.server.controllers.repository.find_repo_content_units', spec_set=True)
+    @mock.patch.object(installdistributor, 'mkdir', return_value=None)
+    @mock.patch.object(installdistributor.PuppetModuleInstallDistributor,
+                       '_create_temporary_destination_directory',
+                       return_value=None)
+    @mock.patch.object(installdistributor.PuppetModuleInstallDistributor,
+                       '_move_to_destination_directory',
+                       return_value=None)
+    @mock.patch.object(installdistributor.PuppetModuleInstallDistributor,
+                       '_rename_directory',
+                       return_value=None)
+    @mock.patch('tarfile.open', autospec=True)
+    @mock.patch.object(installdistributor.PuppetModuleInstallDistributor,
+                       '_clear_destination_directory',
+                       return_value=None)
+    @mock.patch.object(installdistributor.PuppetModuleInstallDistributor,
+                       '_check_for_unsafe_archive_paths',
+                       return_value=None)
+    def test_workflow_with_subdir(self, mock_check_paths, mock_clear, mock_open, mock_rename,
+                                  mock_move, mock_create_tmp_dir, mock_mkdir, mock_find_units):
+        config = PluginCallConfiguration({}, {constants.CONFIG_INSTALL_PATH: self.puppet_dir,
+                                              constants.CONFIG_SUBDIR: self.puppet_subdir})
+        mock_open.return_value.getnames.return_value = ['a/b', 'a/c']
+        mock_find_units.return_value = self.units
+
+        report = self.distributor.publish_repo(self.repo, self.conduit, config)
+
+        puppet_install_path = os.path.join(self.puppet_dir, self.puppet_subdir)
+
+        mock_mkdir.assert_called_once_with(puppet_install_path)
+        mock_create_tmp_dir.assert_called_once_with(puppet_install_path)
+
+        self.assertTrue(isinstance(report, PublishReport))
+        self.assertTrue(report.success_flag)
+        self.assertEqual(len(report.details['errors']), 0)
+        self.assertEqual(len(report.details['success_unit_keys']), 2)
+        self.assertTrue(self.uk1 in report.details['success_unit_keys'])
+        self.assertTrue(self.uk2 in report.details['success_unit_keys'])
+
+        self.assertEqual(mock_open.call_count, 2)
+        mock_open.assert_any_call(self.units[0]._storage_path,
+                                  tarinfo=installdistributor.NormalizingTarInfo)
+        mock_open.assert_any_call(self.units[1]._storage_path,
+                                  tarinfo=installdistributor.NormalizingTarInfo)
+
+        self.assertEqual(mock_rename.call_count, 2)
+
+        mock_find_units.assert_called_once_with(self.repo.repo_obj, yield_content_unit=True)
+        mock_mkdir.assert_called_once_with(puppet_install_path)
+        mock_clear.assert_called_once_with(puppet_install_path)
+        mock_check_paths.assert_called_once_with(self.units, puppet_install_path)
 
         self.assertEqual(mock_move.call_count, 1)
 
@@ -310,7 +366,7 @@ class TestPublishRepo(unittest.TestCase):
                        return_value=None)
     @mock.patch('pulp.server.controllers.repository.find_repo_content_units', spec_set=True)
     def test_cannot_clear_destination(self, mock_find_units, mock_clear, mock_check, mock_open,
-                                     mock_mkdir, mock_create_tmp_dir):
+                                      mock_mkdir, mock_create_tmp_dir):
         config = PluginCallConfiguration({}, {constants.CONFIG_INSTALL_PATH: self.puppet_dir})
         mock_find_units.return_value = []
         mock_clear.side_effect = OSError
@@ -445,10 +501,14 @@ class TestCheckForUnsafeArchivePaths(unittest.TestCase):
         self.distributor._check_for_unsafe_archive_paths(self.units, '/foo/bar')
 
         self.assertEqual(len(self.distributor.detail_report.report['errors']), 2)
-        self.assertTrue(self.distributor.detail_report.report['errors'][0][0] in [self.uk1, self.uk2])
-        self.assertTrue(isinstance(self.distributor.detail_report.report['errors'][0][1], basestring))
-        self.assertTrue(self.distributor.detail_report.report['errors'][1][0] in [self.uk1, self.uk2])
-        self.assertTrue(isinstance(self.distributor.detail_report.report['errors'][1][1], basestring))
+        self.assertTrue(self.distributor.detail_report.report['errors'][0][0] in [self.uk1,
+                                                                                  self.uk2])
+        self.assertTrue(isinstance(self.distributor.detail_report.report['errors'][0][1],
+                                   basestring))
+        self.assertTrue(self.distributor.detail_report.report['errors'][1][0] in [self.uk1,
+                                                                                  self.uk2])
+        self.assertTrue(isinstance(self.distributor.detail_report.report['errors'][1][1],
+                                   basestring))
 
     @mock.patch('tarfile.open', autospec=True)
     @mock.patch.object(installdistributor.PuppetModuleInstallDistributor, '_archive_paths_are_safe')
@@ -487,7 +547,7 @@ class TestArchivePathsAreSafe(unittest.TestCase):
             'a/b/c',
             'd/e/f',
             'g/h/../i',
-            '/foo/a/b/', # this is a terrible thing to have in a tarball, but just in case...
+            '/foo/a/b/',  # this is a terrible thing to have in a tarball, but just in case...
         ]
 
         ret = installdistributor.PuppetModuleInstallDistributor._archive_paths_are_safe(

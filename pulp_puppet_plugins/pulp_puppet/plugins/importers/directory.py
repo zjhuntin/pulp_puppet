@@ -35,7 +35,7 @@ URL_TO_DOWNLOADER = {
 }
 
 FETCH_SUCCEEDED = _('Fetched URL: %(url)s destination: %(dst)s')
-FETCH_FAILED = _('Fetch URL: %(url)s failed: %(msg)s')
+FETCH_FAILED = _('Fetch URL: %(url)s failed: %(msg)s. Switching to puppet forge sync.')
 IMPORT_MODULE = _('Importing module: %(mod)s')
 
 
@@ -148,7 +148,7 @@ class SynchronizeWithDirectory(object):
         for report in listener.succeeded_reports:
             _logger.info(FETCH_SUCCEEDED, dict(url=report.url, dst=report.destination))
         for report in listener.failed_reports:
-            _logger.error(FETCH_FAILED, dict(url=report.url, msg=report.error_msg))
+            _logger.info(FETCH_FAILED, dict(url=report.url, msg=report.error_msg))
 
         return listener.succeeded_reports, listener.failed_reports
 
@@ -258,7 +258,8 @@ class SynchronizeWithDirectory(object):
             remote_paths[module.unit_key_str] = module_path
             list_of_modules.append(module)
 
-        pub_step = publish_step.GetLocalUnitsStep(constants.IMPORTER_TYPE_ID, available_units=list_of_modules, repo=self.repo)
+        pub_step = publish_step.GetLocalUnitsStep(constants.IMPORTER_TYPE_ID,
+                                                  available_units=list_of_modules, repo=self.repo)
         pub_step.process_main()
         self.report.modules_total_count = len(pub_step.units_to_download)
 
@@ -304,7 +305,7 @@ class SynchronizeWithDirectory(object):
         keys_to_remove = list(set(existing_module_ids_by_key.keys()) - set(remote_unit_keys))
         doomed_ids = [existing_module_ids_by_key[key] for key in keys_to_remove]
         doomed_module_iterator = Module.objects.in_bulk(doomed_ids).itervalues()
-        repo_controller.disassociate_units(self.repo, doomed_module_iterator)
+        repo_controller.disassociate_units(self.repo.repo_obj, doomed_module_iterator)
 
     def __call__(self):
         """
